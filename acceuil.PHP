@@ -1,3 +1,12 @@
+<?php
+session_start();
+
+// Rediriger vers la page de connexion si l'utilisateur n'est pas connecté
+if (!isset($_SESSION['user_id'])) {
+    header("Location: /PFE/auth/seconnecter.php");
+    exit;
+}
+?>
 
 <!DOCTYPE html>
 <html lang="fr">
@@ -9,41 +18,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
-    
-    <!-- <header class="header">
-  <div class="container">
-    <div class="header-content">
-       Navigation with Logo -->
-      <!-- <nav class="nav">
-        <div class="logo">
-          <img src="image/Capture d'écran 2025-06-16 131020.png" alt="Souka.ma Logo" class="logo-img">
-        </div>
-        <a href="#" class="nav-link active">Accueil</a>
-        <a href="#" class="nav-link">Services</a>
-        <a href="#" class="nav-link">Demander Un Service</a>
-        <a href="#" class="nav-link">Contact</a>
-        <a href="#" class="nav-link">Mon Compte</a>
-      </nav>  --> 
-
-     
-      <!-- <div class="header-actions">
-        <button class="notification-btn">
-          <i class="fas fa-bell"></i>
-        </button>
-        <button class="btn btn-primary">
-            <i class="fas fa-plus"></i>
-          Publier une annonce
-        </button>
-        <button class="btn btn-secondary">
-          <i class="fas fa-heart"></i>
-          Favorit
-        </button>
-      </div>
-    </div>
-  </div>
-</header> -->
-
-<?php include 'include/nav.html'; ?>
+<?php include 'include/nav.php'; ?>
     <!-- Hero Section -->
     <section class="hero">
         <div class="container-v">
@@ -358,44 +333,53 @@
         </div>
     </div>
     <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-left">
-                    <div class="footer-logo">
-                        <div class="logo-img">
-                          
-                           <img src="image/Capture d'écran 2025-06-16 131020.png" alt="souka" srcset="">
-                    </div>
-                </div>
+    <?php
+     require_once './include/footer.html';
+    
+    ?>
 
-                <div class="footer-center">
-                    <nav class="footer-nav">
-                        <a href="#" class="footer-link">Accueil</a>
-                        <a href="#" class="footer-link">Services</a>
-                        <a href="#" class="footer-link">Demander Un Service</a>
-                        <a href="#" class="footer-link">Contact</a>
-                        <a href="#" class="footer-link">Mon Compte</a>
-                    </nav>
-                </div>
+    <script src="script.js">
+        
+function toggleFavorite(button) {
+    const svg = button.querySelector('svg');
+    const path = svg.querySelector('path');
 
-                <div class="footer-right">
-                    <div class="social-links">
-                        <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
-                        <a href="#" class="social-link"><i class="fab fa-facebook"></i></a>
-                        <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
-                        <a href="#" class="social-link"><i class="fab fa-linkedin"></i></a>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="footer-bottom">
-                <p class="copyright">© 2024 Souka.ma Tous droits réservés</p>
-                <p class="legal-text">Mentions légales | Politique de confidentialité</p>
-            </div>
-        </div>
-    </footer>
+    // Ajouter ou enlever une classe CSS pour changer la couleur
+    if (button.classList.contains('favorited')) {
+        button.classList.remove('favorited');
+        path.setAttribute('fill', 'none');
+    } else {
+        button.classList.add('favorited');
+        path.setAttribute('fill', '#e74c3c'); // rouge
+    }
+}
 
-    <script src="script.js"></script>
+// Exemple de recherche simple (extension possible)
+document.addEventListener('DOMContentLoaded', () => {
+    const searchBtn = document.querySelector('.search-btn');
+    const serviceInput = document.querySelector('.search-inputs input[placeholder*="service"]');
+    const locationInput = document.querySelector('.search-inputs input[placeholder*="ville"]');
+
+    searchBtn.addEventListener('click', () => {
+        const service = serviceInput.value.toLowerCase();
+        const location = locationInput.value.toLowerCase();
+
+        const providers = document.querySelectorAll('.provider-card');
+
+        providers.forEach(provider => {
+            const badge = provider.querySelector('.service-badge')?.textContent.toLowerCase();
+            const city = provider.querySelector('.location span')?.textContent.toLowerCase();
+
+            if ((service && !badge.includes(service)) || (location && !city.includes(location))) {
+                provider.style.display = 'none';
+            } else {
+                provider.style.display = 'block';
+            }
+        });
+    });
+});
+
+    </script>
+   
 </body>
 </html>

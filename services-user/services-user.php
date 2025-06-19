@@ -1,17 +1,43 @@
+<?php
+session_start();
+require_once '/xampp/htdocs/PFE/include/conexion.php'; // Include database connection
+
+// Rediriger vers la page de connexion si l'utilisateur n'est pas connecté
+if (!isset($_SESSION['user_id'])) {
+    header("Location: /PFE/auth/seconnecter.php");
+    exit;
+}
+
+// Fetch category mappings
+$category_map = [];
+$stmt = $pdo->query("SELECT id_categorie, nom FROM categorie");
+while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+    $category_map[$row['nom']] = $row['id_categorie'];
+}
+
+// Fetch services from the database
+$stmt = $pdo->query("SELECT id_service, titre, prix, user_id, id_categorie, image, telephone FROM service");
+$services = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+if (!$services) {
+    echo "<p>Aucun service trouvé dans la base de données.</p>";
+    exit;
+}
+?>
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title></title>
+    <title>Services</title>
     <link rel="stylesheet" href="service-user.css">
     <link rel="stylesheet" href="/PFE/include/nav.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
+    <?php require_once '../include/nav.php'; ?>
 
-<?php require_once'../include/nav.html'; ?>
-    <!-- Search Section -->
     <section class="search-section">
         <div class="container">
             <div class="search-bar">
@@ -34,7 +60,6 @@
         </div>
     </section>
 
-    <!-- Popular Categories -->
     <section class="categories-section">
         <div class="container">
             <h2>Catégories populaires</h2>
@@ -79,614 +104,76 @@
         </div>
     </section>
 
-    <!-- Service Sections -->
     <main class="main-content">
         <div class="container">
-            <!-- Plomberie Section -->
-            <section class="service-section">
-                <div class="section-header">
-                    <h3>
-                        <i class="fas fa-wrench" style="color: #4a90e2;"></i>
-                        Nouvelles annonces de plomberies
-                    </h3>
-                    <a href="#" class="view-more">Plus d'annonces <i class="fas fa-arrow-right"></i></a>
-                </div>
-                <div class="services-grid">
-                    <div class="service-card">
-                        <div class="service-image">
-                            <img src="/placeholder.svg?height=200&width=300" alt="Plomberie service">
-                        </div>
-                        <div class="service-content">
-                            <div class="provider-info">
-                                <img src="/placeholder.svg?height=40&width=40" alt="Provider" class="provider-avatar">
-                                <div>
-                                    <h4>Emma Koffi</h4>
-                                    <div class="rating">
-                                        <span class="stars">★★★★★</span>
-                                        <span class="rating-count">4.8</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <p class="service-description">Bonjour, je suis à la recherche d'un plombier professionnel urgent !</p>
-                            <div class="service-footer">
-                                <span class="price">1000 DH</span>
-                                <div class="tags">
-                                    <span class="tag tag-plomberie">Plomberie</span>
-                                    <span class="tag tag-installation">Installation</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            <?php
+            // Group services by category
+            $services_by_category = [];
+            foreach ($services as $service) {
+                $category_name = $pdo->query("SELECT nom FROM categorie WHERE id_categorie = " . $service['id_categorie'])->fetchColumn();
+                if (!isset($services_by_category[$category_name])) {
+                    $services_by_category[$category_name] = [];
+                }
+                $services_by_category[$category_name][] = $service;
+            }
 
-                    <div class="service-card">
-                        <div class="service-image">
-                            <img src="/placeholder.svg?height=200&width=300" alt="Plomberie service">
-                        </div>
-                        <div class="service-content">
-                            <div class="provider-info">
-                                <img src="/placeholder.svg?height=40&width=40" alt="Provider" class="provider-avatar">
-                                <div>
-                                    <h4>Ahmed El Mansouri</h4>
-                                    <div class="rating">
-                                        <span class="stars">★★★★★</span>
-                                        <span class="rating-count">4.9</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <p class="service-description">Urgent, besoin d'un plombier pour une réparation immédiate !</p>
-                            <div class="service-footer">
-                                <span class="price">800 DH</span>
-                                <div class="tags">
-                                    <span class="tag tag-plomberie">Plomberie</span>
-                                    <span class="tag tag-reparation">Réparation</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            // Define category colors and icons
+            $category_styles = [
+                'Plomberie' => ['color' => '#4a90e2', 'icon' => 'fa-wrench'],
+                'Jardinage' => ['color' => '#4caf50', 'icon' => 'fa-seedling'],
+                'Mécanique' => ['color' => '#ff9800', 'icon' => 'fa-cog'],
+                'Ménage' => ['color' => '#e91e63', 'icon' => 'fa-broom'],
+                'Electricité' => ['color' => '#9c27b0', 'icon' => 'fa-bolt']
+            ];
 
-                    <div class="service-card">
-                        <div class="service-image">
-                            <img src="/placeholder.svg?height=200&width=300" alt="Plomberie service">
-                        </div>
-                        <div class="service-content">
-                            <div class="provider-info">
-                                <img src="/placeholder.svg?height=40&width=40" alt="Provider" class="provider-avatar">
-                                <div>
-                                    <h4>Fatima Zahra</h4>
-                                    <div class="rating">
-                                        <span class="stars">★★★★★</span>
-                                        <span class="rating-count">4.7</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <p class="service-description">Je recherche un plombier pour l'entretien de mes installations sanitaires.</p>
-                            <div class="service-footer">
-                                <span class="price">650 DH</span>
-                                <div class="tags">
-                                    <span class="tag tag-plomberie">Plomberie</span>
-                                    <span class="tag tag-entretien">Entretien</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="service-card">
-                        <div class="service-image">
-                            <img src="/placeholder.svg?height=200&width=300" alt="Plomberie service">
-                        </div>
-                        <div class="service-content">
-                            <div class="provider-info">
-                                <img src="/placeholder.svg?height=40&width=40" alt="Provider" class="provider-avatar">
-                                <div>
-                                    <h4>Youssef Benali</h4>
-                                    <div class="rating">
-                                        <span class="stars">★★★★★</span>
-                                        <span class="rating-count">4.6</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <p class="service-description">Urgent, besoin d'un plombier pour une fuite à réparer demain !</p>
-                            <div class="service-footer">
-                                <span class="price">1200 DH</span>
-                                <div class="tags">
-                                    <span class="tag tag-plomberie">Plomberie</span>
-                                    <span class="tag tag-urgent">Urgent</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Jardinage Section -->
-            <section class="service-section">
-                <div class="section-header">
-                    <h3>
-                        <i class="fas fa-seedling" style="color: #4caf50;"></i>
-                        Nouvelles annonces de Jardinage
-                    </h3>
-                    <a href="#" class="view-more">Plus d'annonces <i class="fas fa-arrow-right"></i></a>
-                </div>
-                <div class="services-grid">
-                    <div class="service-card">
-                        <div class="service-image">
-                            <img src="/placeholder.svg?height=200&width=300" alt="Jardinage service">
-                        </div>
-                        <div class="service-content">
-                            <div class="provider-info">
-                                <img src="/placeholder.svg?height=40&width=40" alt="Provider" class="provider-avatar">
-                                <div>
-                                    <h4>Emma Koffi</h4>
-                                    <div class="rating">
-                                        <span class="stars">★★★★★</span>
-                                        <span class="rating-count">4.8</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <p class="service-description">Bonjour, je suis à la recherche d'un jardinier professionnel urgent !</p>
-                            <div class="service-footer">
-                                <span class="price">1000 DH</span>
-                                <div class="tags">
-                                    <span class="tag tag-jardinage">Jardinage</span>
-                                    <span class="tag tag-entretien">Entretien</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="service-card">
-                        <div class="service-image">
-                            <img src="/placeholder.svg?height=200&width=300" alt="Jardinage service">
-                        </div>
-                        <div class="service-content">
-                            <div class="provider-info">
-                                <img src="/placeholder.svg?height=40&width=40" alt="Provider" class="provider-avatar">
-                                <div>
-                                    <h4>Ahmed El Mansouri</h4>
-                                    <div class="rating">
-                                        <span class="stars">★★★★★</span>
-                                        <span class="rating-count">4.9</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <p class="service-description">Urgent, besoin d'un jardinier pour une réparation immédiate !</p>
-                            <div class="service-footer">
-                                <span class="price">800 DH</span>
-                                <div class="tags">
-                                    <span class="tag tag-jardinage">Jardinage</span>
-                                    <span class="tag tag-plantation">Plantation</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="service-card">
-                        <div class="service-image">
-                            <img src="/placeholder.svg?height=200&width=300" alt="Jardinage service">
-                        </div>
-                        <div class="service-content">
-                            <div class="provider-info">
-                                <img src="/placeholder.svg?height=40&width=40" alt="Provider" class="provider-avatar">
-                                <div>
-                                    <h4>Fatima Zahra</h4>
-                                    <div class="rating">
-                                        <span class="stars">★★★★★</span>
-                                        <span class="rating-count">4.7</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <p class="service-description">Je recherche un jardinier pour l'entretien de mes installations sanitaires.</p>
-                            <div class="service-footer">
-                                <span class="price">650 DH</span>
-                                <div class="tags">
-                                    <span class="tag tag-jardinage">Jardinage</span>
-                                    <span class="tag tag-entretien">Entretien</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="service-card">
-                        <div class="service-image">
-                            <img src="/placeholder.svg?height=200&width=300" alt="Jardinage service">
-                        </div>
-                        <div class="service-content">
-                            <div class="provider-info">
-                                <img src="/placeholder.svg?height=40&width=40" alt="Provider" class="provider-avatar">
-                                <div>
-                                    <h4>Youssef Benali</h4>
-                                    <div class="rating">
-                                        <span class="stars">★★★★★</span>
-                                        <span class="rating-count">4.6</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <p class="service-description">Urgent, besoin d'un jardinier pour une taille à réparer demain !</p>
-                            <div class="service-footer">
-                                <span class="price">1200 DH</span>
-                                <div class="tags">
-                                    <span class="tag tag-jardinage">Jardinage</span>
-                                    <span class="tag tag-taille">Taille</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Mécanique Section -->
-            <section class="service-section">
-                <div class="section-header">
-                    <h3>
-                        <i class="fas fa-cog" style="color: #ff9800;"></i>
-                        Nouvelles annonces de Mécanique
-                    </h3>
-                    <a href="#" class="view-more">Plus d'annonces <i class="fas fa-arrow-right"></i></a>
-                </div>
-                <div class="services-grid">
-                    <div class="service-card">
-                        <div class="service-image">
-                            <img src="/placeholder.svg?height=200&width=300" alt="Mécanique service">
-                        </div>
-                        <div class="service-content">
-                            <div class="provider-info">
-                                <img src="/placeholder.svg?height=40&width=40" alt="Provider" class="provider-avatar">
-                                <div>
-                                    <h4>Emma Koffi</h4>
-                                    <div class="rating">
-                                        <span class="stars">★★★★★</span>
-                                        <span class="rating-count">4.8</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <p class="service-description">Bonjour, je suis à la recherche d'un mécanicien professionnel urgent !</p>
-                            <div class="service-footer">
-                                <span class="price">1000 DH</span>
-                                <div class="tags">
-                                    <span class="tag tag-mecanique">Mécanique</span>
-                                    <span class="tag tag-reparation">Réparation</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="service-card">
-                        <div class="service-image">
-                            <img src="/placeholder.svg?height=200&width=300" alt="Mécanique service">
-                        </div>
-                        <div class="service-content">
-                            <div class="provider-info">
-                                <img src="/placeholder.svg?height=40&width=40" alt="Provider" class="provider-avatar">
-                                <div>
-                                    <h4>Ahmed El Mansouri</h4>
-                                    <div class="rating">
-                                        <span class="stars">★★★★★</span>
-                                        <span class="rating-count">4.9</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <p class="service-description">Urgent, besoin d'un mécanicien pour une réparation immédiate !</p>
-                            <div class="service-footer">
-                                <span class="price">800 DH</span>
-                                <div class="tags">
-                                    <span class="tag tag-mecanique">Mécanique</span>
-                                    <span class="tag tag-diagnostic">Diagnostic</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="service-card">
-                        <div class="service-image">
-                            <img src="/placeholder.svg?height=200&width=300" alt="Mécanique service">
-                        </div>
-                        <div class="service-content">
-                            <div class="provider-info">
-                                <img src="/placeholder.svg?height=40&width=40" alt="Provider" class="provider-avatar">
-                                <div>
-                                    <h4>Fatima Zahra</h4>
-                                    <div class="rating">
-                                        <span class="stars">★★★★★</span>
-                                        <span class="rating-count">4.7</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <p class="service-description">Je recherche un mécanicien pour l'entretien de mes installations sanitaires.</p>
-                            <div class="service-footer">
-                                <span class="price">600 DH</span>
-                                <div class="tags">
-                                    <span class="tag tag-mecanique">Mécanique</span>
-                                    <span class="tag tag-entretien">Entretien</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="service-card">
-                        <div class="service-image">
-                            <img src="/placeholder.svg?height=200&width=300" alt="Mécanique service">
-                        </div>
-                        <div class="service-content">
-                            <div class="provider-info">
-                                <img src="/placeholder.svg?height=40&width=40" alt="Provider" class="provider-avatar">
-                                <div>
-                                    <h4>Youssef Benali</h4>
-                                    <div class="rating">
-                                        <span class="stars">★★★★★</span>
-                                        <span class="rating-count">4.6</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <p class="service-description">Urgent, besoin d'un mécanicien pour une fuite à réparer demain !</p>
-                            <div class="service-footer">
-                                <span class="price">1200 DH</span>
-                                <div class="tags">
-                                    <span class="tag tag-mecanique">Mécanique</span>
-                                    <span class="tag tag-urgent">Urgent</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Ménage Section -->
-            <section class="service-section">
-                <div class="section-header">
-                    <h3>
-                        <i class="fas fa-broom" style="color: #e91e63;"></i>
-                        Nouvelles annonces de Ménage
-                    </h3>
-                    <a href="#" class="view-more">Plus d'annonces <i class="fas fa-arrow-right"></i></a>
-                </div>
-                <div class="services-grid">
-                    <div class="service-card">
-                        <div class="service-image">
-                            <img src="/placeholder.svg?height=200&width=300" alt="Ménage service">
-                        </div>
-                        <div class="service-content">
-                            <div class="provider-info">
-                                <img src="/placeholder.svg?height=40&width=40" alt="Provider" class="provider-avatar">
-                                <div>
-                                    <h4>Emma Koffi</h4>
-                                    <div class="rating">
-                                        <span class="stars">★★★★★</span>
-                                        <span class="rating-count">4.8</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <p class="service-description">Bonjour, je suis à la recherche d'un plombier professionnel urgent !</p>
-                            <div class="service-footer">
-                                <span class="price">1000 DH</span>
-                                <div class="tags">
-                                    <span class="tag tag-menage">Ménage</span>
-                                    <span class="tag tag-nettoyage">Nettoyage</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="service-card">
-                        <div class="service-image">
-                            <img src="/placeholder.svg?height=200&width=300" alt="Ménage service">
-                        </div>
-                        <div class="service-content">
-                            <div class="provider-info">
-                                <img src="/placeholder.svg?height=40&width=40" alt="Provider" class="provider-avatar">
-                                <div>
-                                    <h4>Ahmed El Mansouri</h4>
-                                    <div class="rating">
-                                        <span class="stars">★★★★★</span>
-                                        <span class="rating-count">4.9</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <p class="service-description">Urgent, besoin d'un plombier pour une réparation immédiate !</p>
-                            <div class="service-footer">
-                                <span class="price">800 DH</span>
-                                <div class="tags">
-                                    <span class="tag tag-menage">Ménage</span>
-                                    <span class="tag tag-repassage">Repassage</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="service-card">
-                        <div class="service-image">
-                            <img src="/placeholder.svg?height=200&width=300" alt="Ménage service">
-                        </div>
-                        <div class="service-content">
-                            <div class="provider-info">
-                                <img src="/placeholder.svg?height=40&width=40" alt="Provider" class="provider-avatar">
-                                <div>
-                                    <h4>Fatima Zahra</h4>
-                                    <div class="rating">
-                                        <span class="stars">★★★★★</span>
-                                        <span class="rating-count">4.7</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <p class="service-description">Je recherche un plombier pour l'entretien de mes installations sanitaires.</p>
-                            <div class="service-footer">
-                                <span class="price">600 DH</span>
-                                <div class="tags">
-                                    <span class="tag tag-menage">Ménage</span>
-                                    <span class="tag tag-organisation">Organisation</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="service-card">
-                        <div class="service-image">
-                            <img src="/placeholder.svg?height=200&width=300" alt="Ménage service">
-                        </div>
-                        <div class="service-content">
-                            <div class="provider-info">
-                                <img src="/placeholder.svg?height=40&width=40" alt="Provider" class="provider-avatar">
-                                <div>
-                                    <h4>Youssef Benali</h4>
-                                    <div class="rating">
-                                        <span class="stars">★★★★★</span>
-                                        <span class="rating-count">4.6</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <p class="service-description">Urgent, besoin d'un plombier pour une fuite à réparer demain !</p>
-                            <div class="service-footer">
-                                <span class="price">1200 DH</span>
-                                <div class="tags">
-                                    <span class="tag tag-menage">Ménage</span>
-                                    <span class="tag tag-desinfection">Désinfection</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Electricité Section -->
-            <section class="service-section">
-                <div class="section-header">
-                    <h3>
-                        <i class="fas fa-bolt" style="color: #9c27b0;"></i>
-                        Nouvelles annonces de Electricité
-                    </h3>
-                    <a href="#" class="view-more">Plus d'annonces <i class="fas fa-arrow-right"></i></a>
-                </div>
-                <div class="services-grid">
-                    <div class="service-card">
-                        <div class="service-image">
-                            <img src="/placeholder.svg?height=200&width=300" alt="Electricité service">
-                        </div>
-                        <div class="service-content">
-                            <div class="provider-info">
-                                <img src="/placeholder.svg?height=40&width=40" alt="Provider" class="provider-avatar">
-                                <div>
-                                    <h4>Emma Koffi</h4>
-                                    <div class="rating">
-                                        <span class="stars">★★★★★</span>
-                                        <span class="rating-count">4.8</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <p class="service-description">Bonjour, je suis à la recherche d'un plombier professionnel urgent !</p>
-                            <div class="service-footer">
-                                <span class="price">1000 DH</span>
-                                <div class="tags">
-                                    <span class="tag tag-electricite">Electricité</span>
-                                    <span class="tag tag-installation">Installation</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="service-card">
-                        <div class="service-image">
-                            <img src="/placeholder.svg?height=200&width=300" alt="Electricité service">
-                        </div>
-                        <div class="service-content">
-                            <div class="provider-info">
-                                <img src="/placeholder.svg?height=40&width=40" alt="Provider" class="provider-avatar">
-                                <div>
-                                    <h4>Ahmed El Mansouri</h4>
-                                    <div class="rating">
-                                        <span class="stars">★★★★★</span>
-                                        <span class="rating-count">4.9</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <p class="service-description">Urgent, besoin d'un plombier pour une réparation immédiate !</p>
-                            <div class="service-footer">
-                                <span class="price">800 DH</span>
-                                <div class="tags">
-                                    <span class="tag tag-electricite">Electricité</span>
-                                    <span class="tag tag-diagnostic">Diagnostic</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="service-card">
-                        <div class="service-image">
-                            <img src="/placeholder.svg?height=200&width=300" alt="Electricité service">
-                        </div>
-                        <div class="service-content">
-                            <div class="provider-info">
-                                <img src="/placeholder.svg?height=40&width=40" alt="Provider" class="provider-avatar">
-                                <div>
-                                    <h4>Fatima Zahra</h4>
-                                    <div class="rating">
-                                        <span class="stars">★★★★★</span>
-                                        <span class="rating-count">4.7</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <p class="service-description">Je recherche un plombier pour l'entretien de mes installations sanitaires.</p>
-                            <div class="service-footer">
-                                <span class="price">800 DH</span>
-                                <div class="tags">
-                                    <span class="tag tag-electricite">Electricité</span>
-                                    <span class="tag tag-reparation">Réparation</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="service-card">
-                        <div class="service-image">
-                            <img src="/placeholder.svg?height=200&width=300" alt="Electricité service">
-                        </div>
-                        <div class="service-content">
-                            <div class="provider-info">
-                                <img src="/placeholder.svg?height=40&width=40" alt="Provider" class="provider-avatar">
-                                <div>
-                                    <h4>Youssef Benali</h4>
-                                    <div class="rating">
-                                        <span class="stars">★★★★★</span>
-                                        <span class="rating-count">4.6</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <p class="service-description">Urgent, besoin d'un plombier pour une fuite à réparer demain !</p>
-                            <div class="service-footer">
-                                <span class="price">800 DH</span>
-                                <div class="tags">
-                                    <span class="tag tag-electricite">Electricité</span>
-                                    <span class="tag tag-maintenance">Maintenance</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
+            // Display services by category
+            foreach ($services_by_category as $category_name => $category_services) {
+                $style = $category_styles[$category_name] ?? ['color' => '#4a90e2', 'icon' => 'fa-wrench'];
+                echo '<section class="service-section">';
+                echo '<div class="section-header">';
+                echo '<h3>';
+                echo '<i class="fas ' . $style['icon'] . '" style="color: ' . $style['color'] . ';"></i>';
+                echo " Nouvelles annonces de $category_name";
+                echo '</h3>';
+                echo '<a href="#" class="view-more">Plus d\'annonces <i class="fas fa-arrow-right"></i></a>';
+                echo '</div>';
+                echo '<div class="services-grid">';
+                foreach ($category_services as $service) {
+                    echo '<a href="detail.php?category=' . urlencode($category_name) . '&image=' . urlencode($service['image']) . '&provider_avatar=' . urlencode('/placeholder.svg?height=40&width=40') . '&provider_name=' . urlencode($service['titre']) . '&rating=' . urlencode('4.8') . '&price=' . urlencode($service['prix'] . ' DH') . '&phone=' . urlencode($service['telephone']) . '">';
+                    echo '<div class="service-card">';
+                    echo '<div class="service-image">';
+                    echo '<img src="' . htmlspecialchars($service['image']) . '" alt="' . htmlspecialchars($category_name) . ' service">';
+                    echo '</div>';
+                    echo '<div class="service-content">';
+                    echo '<div class="provider-info">';
+                    echo '<img src="/placeholder.svg?height=40&width=40" alt="Provider" class="provider-avatar">';
+                    echo '<div>';
+                    echo '<h4>' . htmlspecialchars($service['titre']) . '</h4>';
+                    echo '<div class="rating">';
+                    echo '<span class="stars">★★★★★</span>';
+                    echo '<span class="rating-count">4.8</span>';
+                    echo '</div>';
+                    echo '</div>';
+                    echo '</div>';
+                    echo '<span class="price">' . htmlspecialchars($service['prix']) . ' DH</span>';
+                    echo '<div class="service-footer">';
+                    echo '<div class="actions">';
+                    echo '<button class="btn-favorite" data-href="/PFE/favourite/favourite.php">Favorite</button>';
+                    echo '<button class="btn-demander" data-href="demander.php?service_name=' . urlencode($category_name) . '&id_categorie=' . $service['id_categorie'] . '&phone=' . urlencode($service['telephone']) . '">Demander</button>';
+                    echo '</div>';
+                    echo '</div>';
+                    echo '</div>';
+                    echo '</div>';
+                    echo '</a>';
+                }
+                echo '</div>'; // End of services-grid
+                echo '</section>'; // End of service-section
+            }
+            ?>
         </div>
     </main>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-links">
-                    <a href="#">Accueil</a>
-                    <a href="#">Services</a>
-                    <a href="#">Demander un Service</a>
-                    <a href="#">Contact</a>
-                    <a href="#">Mon Compte</a>
-                </div>
-                <div class="social-links">
-                    <a href="#"><i class="fab fa-instagram"></i></a>
-                    <a href="#"><i class="fab fa-facebook"></i></a>
-                    <a href="#"><i class="fab fa-twitter"></i></a>
-                    <a href="#"><i class="fab fa-linkedin"></i></a>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>Aquila Pro | Plateforme de Services au Maroc</p>
-            </div>
-        </div>
-    </footer>
+    <?php require_once '../include/footer.html'; ?>
 
     <script src="services-user.js"></script>
 </body>

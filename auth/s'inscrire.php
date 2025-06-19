@@ -80,6 +80,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         'password' => $password_hashed,
                     ]);
                     $success_message = "Compte créé avec succès.";
+                     header('Location: seconnecter.php');
+                    exit;
                 }
             } catch (PDOException $e) {
                 error_log("Erreur Signup: " . $e->getMessage());

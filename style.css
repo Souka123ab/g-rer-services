@@ -215,7 +215,9 @@ body {
 .search-btn:hover {
   background: #5a6268;
 }
-
+.hero-left{
+  margin-left: 25px;
+}
 .hero-illustration {
   display: flex;
   justify-content: center;
@@ -230,78 +232,7 @@ body {
 
 
 
-/* Footer */
-.footer {
-  background: white;
-  border-top: 1px solid #e9ecef;
-  padding: 2rem 0 1rem;
-  margin-top: 4rem;
-}
 
-.footer-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-}
-
-/* .footer-logo {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-} */
-.footer .logo-img img{
-  width: 26%;
-}
-.footer-nav {
-  display: flex;
-  gap: 2rem;
-}
-
-.footer-link {
-  text-decoration: none;
-  color: #666;
-  font-size: 0.9rem;
-  transition: color 0.3s ease;
-}
-
-.footer-link:hover {
-  color: #20b2aa;
-}
-
-.social-links {
-  display: flex;
-  gap: 1rem;
-}
-
-.social-link {
-  width: 36px;
-  height: 36px;
-  background: #f8f9fa;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
-  color: #666;
-  transition: all 0.3s ease;
-}
-
-.social-link:hover {
-  background: #20b2aa;
-  color: white;
-  transform: translateY(-2px);
-}
-
-.footer-bottom {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 1rem;
-  border-top: 1px solid #e9ecef;
-  font-size: 0.9rem;
-  color: #666;
-}
 
 /* Responsive Design */
 @media (max-width: 768px) {

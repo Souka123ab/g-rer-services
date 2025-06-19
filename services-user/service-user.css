@@ -11,91 +11,15 @@ body {
     line-height: 1.6;
 }
 
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
 .container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 20px;
-}
-
-/* Header */
-.header {
-    background: white;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-}
-
-.header-content {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1rem 0;
-}
-
-.logo {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: #20b2aa;
-}
-
-.nav {
-    display: flex;
-    gap: 2rem;
-}
-
-.nav-link {
-    text-decoration: none;
-    color: #666;
-    font-weight: 500;
-    padding: 0.5rem 0;
-    border-bottom: 2px solid transparent;
-    transition: all 0.3s ease;
-}
-
-.nav-link.active,
-.nav-link:hover {
-    color: #20b2aa;
-    border-bottom-color: #20b2aa;
-}
-
-.header-actions {
-    display: flex;
-    gap: 1rem;
-}
-
-.btn {
-    padding: 0.75rem 1.5rem;
-    border: none;
-    border-radius: 8px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    text-decoration: none;
-}
-
-.btn-primary {
-    background: #20b2aa;
-    color: white;
-}
-
-.btn-primary:hover {
-    background: #1a9b94;
-}
-
-.btn-secondary {
-    background: #e3f2fd;
-    color: #20b2aa;
-}
-
-.btn-secondary:hover {
-    background: #bbdefb;
 }
 
 /* Search Section */
@@ -149,12 +73,18 @@ body {
     background: #20b2aa;
     color: white;
     padding: 1rem 2rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
 }
 
 .btn-filter {
-    background: #f5f5f5;
-    color: #666;
+    background: #A31F5C;
+    color: white;
     padding: 1rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
 }
 
 /* Categories Section */
@@ -172,7 +102,7 @@ body {
 .categories-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 2rem;
+    gap: 12px;
 }
 
 .category-item {
@@ -243,7 +173,7 @@ body {
 .services-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 2rem;
+    gap: 12px;
 }
 
 .service-card {
@@ -252,6 +182,8 @@ body {
     overflow: hidden;
     box-shadow: 0 4px 20px rgba(0,0,0,0.1);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    text-decoration: none;
+    color: inherit;
 }
 
 .service-card:hover {
@@ -269,10 +201,7 @@ body {
     height: 100%;
     object-fit: cover;
 }
-#services{
-    border-bottom: #1a9b94 solid 2px;
-    color: #1a9b94;
-}
+
 .service-content {
     padding: 1.5rem;
 }
@@ -289,6 +218,7 @@ body {
     height: 40px;
     border-radius: 50%;
     object-fit: cover;
+    background-color: #e0e0e0; /* Placeholder background */
 }
 
 .provider-info h4 {
@@ -313,150 +243,58 @@ body {
     color: #666;
 }
 
-.service-description {
-    color: #666;
-    margin-bottom: 1.5rem;
-    line-height: 1.5;
+.price {
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: #333;
+    display: block;
+    margin-top: 1rem;
 }
 
 .service-footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-top: 1rem;
 }
 
-.price {
-    font-size: 1.25rem;
-    font-weight: bold;
-    color: #333;
-}
-
-.tags {
+.actions {
+    margin-top: 10px;
     display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
+    gap: 10px;
 }
 
-.tag {
-    padding: 0.25rem 0.75rem;
+.btn-favorite, .btn-demander {
+    padding: 6px 14px;
+    border: none;
     border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 500;
     color: white;
-}
-
-.tag-plomberie { background: #4a90e2; }
-.tag-jardinage { background: #4caf50; }
-.tag-mecanique { background: #ff9800; }
-.tag-menage { background: #e91e63; }
-.tag-electricite { background: #9c27b0; }
-.tag-installation { background: #20b2aa; }
-.tag-reparation { background: #f44336; }
-.tag-entretien { background: #607d8b; }
-.tag-urgent { background: #ff5722; }
-.tag-plantation { background: #8bc34a; }
-.tag-taille { background: #689f38; }
-.tag-diagnostic { background: #795548; }
-.tag-nettoyage { background: #e91e63; }
-.tag-repassage { background: #9c27b0; }
-.tag-organisation { background: #673ab7; }
-.tag-desinfection { background: #f44336; }
-.tag-maintenance { background: #607d8b; }
-
-/* Footer */
-.footer {
-    background: #333;
-    color: white;
-    padding: 2rem 0 1rem;
-    margin-top: 4rem;
-}
-
-.footer-content {
+    font-weight: bold;
+    font-size: 0.9rem;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 1rem;
+    gap: 6px;
+    cursor: pointer;
+    transition: background 0.3s ease;
 }
 
-.footer-links {
-    display: flex;
-    gap: 2rem;
+.btn-favorite {
+    background-color: #ff2e63;
 }
 
-.footer-links a {
-    color: #ccc;
-    text-decoration: none;
-    transition: color 0.3s ease;
+.btn-demander {
+    background-color: #6c63ff;
 }
 
-.footer-links a:hover {
-    color: #20b2aa;
+.btn-favorite:hover {
+    background-color: #e02555;
 }
 
-.social-links {
-    display: flex;
-    gap: 1rem;
+.btn-demander:hover {
+    background-color: #5149dd;
 }
 
-.social-links a {
-    color: #ccc;
-    font-size: 1.5rem;
-    transition: color 0.3s ease;
-}
-
-.social-links a:hover {
-    color: #20b2aa;
-}
-
-.footer-bottom {
-    text-align: center;
-    padding-top: 1rem;
-    border-top: 1px solid #555;
-    color: #ccc;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    .header-content {
-        flex-direction: column;
-        gap: 1rem;
-    }
-    
-    .nav {
-        order: 3;
-        width: 100%;
-        justify-content: center;
-    }
-    
-    .search-bar {
-        flex-direction: column;
-    }
-    
-    .categories-grid {
-        grid-template-columns: repeat(3, 1fr);
-    }
-    
-    .services-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .section-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-    }
-    
-    .footer-content {
-        flex-direction: column;
-        gap: 1rem;
-    }
-    
-    .footer-links {
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-}
-
+/* Media Queries */
 @media (max-width: 480px) {
     .categories-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -472,7 +310,7 @@ body {
         padding: 1rem;
     }
     
-    .tags {
-        justify-content: flex-start;
+    .services-grid {
+        grid-template-columns: 1fr;
     }
 }
