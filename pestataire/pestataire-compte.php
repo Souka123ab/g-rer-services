@@ -2,17 +2,18 @@
 session_start();
 require_once '/xampp/htdocs/PFE/include/conexion.php';
 
-// Rediriger vers la page de connexion si l'utilisateur n'est pas connecté
+// Redirect to login page if user is not logged in
 if (!isset($_SESSION['user_id'])) {
     header("Location: /PFE/auth/seconnecter.php");
     exit;
 }
 
-// Fetch provider data from user table
+// Fetch provider data from _user table
 $providerData = [];
+$userId = isset($_GET['user_id']) ? (int)$_GET['user_id'] : $_SESSION['user_id']; // Use URL user_id or logged-in user_id
 try {
-$stmt = $pdo->prepare("SELECT nom, ville AS profession, numero AS comments, user_id AS views, email AS about FROM _user WHERE user_id = ?");
-    $stmt->execute([$_SESSION['user_id']]);
+    $stmt = $pdo->prepare("SELECT nom, ville AS profession, numero AS comments, user_id AS views, email AS about FROM _user WHERE user_id = ?");
+    $stmt->execute([$userId]);
     $providerData = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
     if (empty($providerData['nom']) && isset($_SESSION['nom'])) {
         $providerData['nom'] = $_SESSION['nom']; // Fallback to session
@@ -31,6 +32,13 @@ $stmt = $pdo->prepare("SELECT nom, ville AS profession, numero AS comments, user
 } catch (PDOException $e) {
     echo "<p style='color:red;'>Erreur : " . htmlspecialchars($e->getMessage()) . "</p>";
 }
+
+// Logout function
+if (isset($_GET['logout'])) {
+    session_destroy();
+    header("Location: /PFE/auth/seconnecter.php");
+    exit;
+}
 ?>
 
 <!DOCTYPE html>
@@ -46,6 +54,11 @@ $stmt = $pdo->prepare("SELECT nom, ville AS profession, numero AS comments, user
 
     <main class="main-content">
         <div class="container">
+            <!-- Logout Button -->
+            <?php if ($userId == $_SESSION['user_id']): ?>
+                <a href="?logout=1" class="logout-btn">Déconnexion</a>
+            <?php endif; ?>
+
             <section class="profile-section">
                 <div class="profile-avatar"></div>
                 <h1 class="profile-name"><?php echo htmlspecialchars($providerData['nom'] ?? ''); ?></h1>

@@ -9,7 +9,6 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-
 $user_id = $_SESSION['user_id'] ?? 1;
 
 // Récupération via URL
@@ -31,24 +30,26 @@ if ($id_categorie) {
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $id_categorie = $_POST['id_categorie'] ?? '';
     $date_service = $_POST['service-date'] ?? '';
+    $time_service = $_POST['service-time'] ?? ''; // New time input
     $phone = $_POST['phone'] ?? '';
     $ville = $_POST['city'] ?? '';
     $status = $_POST['status'] ?? '';
     $category = $_POST['service_name'] ?? '';
 
-    if (!empty($id_categorie) && !empty($date_service) && !empty($phone) && !empty($ville) && !empty($status)) {
+    // Combine date and time into a single datetime string
+    if (!empty($date_service) && !empty($time_service)) {
+        $date_service = date('Y-m-d H:i:s', strtotime("$date_service $time_service"));
+    } elseif (!empty($date_service)) {
+        $date_service = date('Y-m-d H:i:s', strtotime($date_service));
+    } else {
+        $date_service = null;
+    }
+
+    if (!empty($id_categorie) && $date_service && !empty($phone) && !empty($ville) && !empty($status)) {
         try {
-            // Convert date to datetime format
-            $date_service = date('Y-m-d H:i:s', strtotime($date_service));
-            
-            echo $id_categorie;
-            echo "<br>";
             $stmtService = $pdo->prepare("SELECT id_service FROM service WHERE id_categorie = ? LIMIT 1");
             $stmtService->execute([$id_categorie]);
             $id_service = $stmtService->fetchColumn();
-            echo "<pre>";
-            print_r($id_service);
-            echo "</pre>";
 
             if (!$id_service) {
                 echo "<p class='error'>❌ Aucun service trouvé pour cette catégorie.</p>";
@@ -122,6 +123,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     <input type="date" id="service-date" name="service-date" class="form-input" required>
                 </div>
 
+                <!-- Time du service -->
+                <div class="form-group">
+                    <label for="service-time">Heure du service</label>
+                    <input type="time" id="service-time" name="service-time" class="form-input" required>
+                </div>
+
                 <!-- Numéro de téléphone -->
                 <div class="form-group">
                     <label for="phone">Numéro de téléphone</label>
@@ -133,10 +140,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     <label for="city">Ville</label>
                     <select id="city" name="city" class="form-select" required>
                         <option value="">Sélectionner une ville</option>
-                        <option value="casablanca">Casablanca</option>
-                        <option value="rabat">Rabat</option>
-                        <option value="marrakech">Marrakech</option>
-                        <option value="fes">Fès</option>
+                        <option value="casablanca" <?= ($ville == 'casablanca') ? 'selected' : '' ?>>Casablanca</option>
+                        <option value="rabat" <?= ($ville == 'rabat') ? 'selected' : '' ?>>Rabat</option>
+                        <option value="marrakech" <?= ($ville == 'marrakech') ? 'selected' : '' ?>>Marrakech</option>
+                        <option value="fes" <?= ($ville == 'fes') ? 'selected' : '' ?>>Fès</option>
                     </select>
                 </div>
 
@@ -145,9 +152,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     <label for="status">Statut</label>
                     <select id="status" name="status" class="form-select" required>
                         <option value="">Sélectionner le statut</option>
-                        <option value="en_attente">En attente</option>
-                        <option value="valide">Validé</option>
-                        <option value="refuse">Refusé</option>
+                        <option value="en_attente" <?= ($status == 'en_attente') ? 'selected' : '' ?>>En attente</option>
+                        <option value="valide" <?= ($status == 'valide') ? 'selected' : '' ?>>Validé</option>
+                        <option value="refuse" <?= ($status == 'refuse') ? 'selected' : '' ?>>Refusé</option>
                     </select>
                 </div>
 

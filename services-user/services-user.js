@@ -260,3 +260,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
+document.addEventListener("DOMContentLoaded", () => {
+    // Handle Demander button clicks
+    document.querySelectorAll('.btn-demander').forEach(button => {
+        button.addEventListener('click', (e) => {
+            e.preventDefault(); // Prevent any default action
+            const href = button.getAttribute('data-href');
+            if (href) {
+                window.location.href = href; // Navigate to demander.php
+            }
+        });
+    });
+
+    // Optional: Handle other interactions (e.g., search, filter) if needed
+});

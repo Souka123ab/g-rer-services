@@ -2,31 +2,29 @@
 require_once '/xampp/htdocs/PFE/include/conexion.php';
 session_start();
 
-session_start();
-
-// Rediriger vers la page de connexion si l'utilisateur n'est pas connecté
+// Redirect to login if user is not logged in
 if (!isset($_SESSION['user_id'])) {
     header("Location: /PFE/auth/seconnecter.php");
     exit;
 }
 
-
-// Vérifie si la catégorie est bien envoyée par GET
+// Verify category from GET parameter
 $category = isset($_GET['category']) ? htmlspecialchars(urldecode($_GET['category'])) : '';
 
-// Si catégorie existe, on récupère son id_categorie depuis la table `categorie`
+// Fetch id_categorie if category exists
 $id_categorie = null;
 if (!empty($category)) {
     $stmt = $pdo->prepare("SELECT id_categorie FROM categorie WHERE nom = ? LIMIT 1");
     $stmt->execute([$category]);
     $id_categorie = $stmt->fetchColumn();
+    if ($id_categorie === false) {
+        $id_categorie = null; // Handle case where category doesn't exist
+    }
 }
 
-// Récupération du téléphone si présent
+// Retrieve phone if present
 $phone = isset($_GET['phone']) ? htmlspecialchars(urldecode($_GET['phone'])) : '';
 ?>
-
-<!-- Lien "Demander" -->
 
 <!DOCTYPE html>
 <html lang="fr">
@@ -37,7 +35,6 @@ $phone = isset($_GET['phone']) ? htmlspecialchars(urldecode($_GET['phone'])) : '
     <link rel="stylesheet" href="detail.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
-        /* Inline CSS for quick styling (move to detail.css later) */
         .comment-form {
             display: none;
             margin-bottom: 20px;
@@ -90,22 +87,20 @@ $phone = isset($_GET['phone']) ? htmlspecialchars(urldecode($_GET['phone'])) : '
             isset($_GET['provider_avatar']) &&
             isset($_GET['provider_name']) &&
             isset($_GET['rating']) &&
-            isset($_GET['description']) &&
             isset($_GET['price']) &&
             isset($_GET['phone'])) {
 
-            // Retrieve and decode the parameters safely
+            // Retrieve and decode parameters safely
             $category = htmlspecialchars(urldecode($_GET['category']));
             $image = htmlspecialchars(urldecode($_GET['image']));
             $provider_avatar = htmlspecialchars(urldecode($_GET['provider_avatar']));
             $provider_name = htmlspecialchars(urldecode($_GET['provider_name']));
             $rating = htmlspecialchars(urldecode($_GET['rating']));
-            $description = htmlspecialchars(urldecode($_GET['description']));
+            $description = isset($_GET['description']) ? htmlspecialchars(urldecode($_GET['description'])) : 'Aucune description';
             $price = htmlspecialchars(urldecode($_GET['price']));
             $phone = htmlspecialchars(urldecode($_GET['phone']));
 
-            // Placeholder comments (replace with database data if needed)
-            session_start();
+            // Initialize comments if not set
             if (!isset($_SESSION['comments'])) {
                 $_SESSION['comments'] = [
                     [
@@ -136,7 +131,7 @@ $phone = isset($_GET['phone']) ? htmlspecialchars(urldecode($_GET['phone'])) : '
 
             <!-- Action Buttons -->
             <div class="detail-action-buttons">
-                <button class="btn-commentaire" onclick="toggleCommentForm()">commentaire</button>
+                <button class="btn-commentaire" onclick="toggleCommentForm()">Commentaire</button>
                 <button class="btn-appel">Appel</button>
             </div>
 
@@ -187,10 +182,10 @@ $phone = isset($_GET['phone']) ? htmlspecialchars(urldecode($_GET['phone'])) : '
                         <div class="comment-item">
                             <div class="comment-content">
                                 <div class="comment-header">
-                                    <span class="comment-user">User <?php echo $comment['user']; ?></span>
-                                    <span class="comment-time"><?php echo $comment['time']; ?></span>
+                                    <span class="comment-user"><?php echo htmlspecialchars($comment['user']); ?></span>
+                                    <span class="comment-time"><?php echo htmlspecialchars($comment['time']); ?></span>
                                 </div>
-                                <p class="comment-text"><?php echo $comment['comment']; ?></p>
+                                <p class="comment-text"><?php echo htmlspecialchars($comment['comment']); ?></p>
                                 <div class="comment-rating">
                                     <?php
                                     $stars = floor($comment['rating']);
@@ -214,38 +209,35 @@ $phone = isset($_GET['phone']) ? htmlspecialchars(urldecode($_GET['phone'])) : '
 
             <!-- Demand Button -->
             <div class="detail-footer-actions">
-<a href="demander.php?service_name=<?php echo urlencode($category); ?>&id_categorie=<?php echo urlencode($id_categorie); ?>&phone=<?php echo urlencode($phone); ?>" class="btn-demander">Demander</a>
-
+                <a href="demander.php?service_name=<?php echo urlencode($category); ?>&id_categorie=<?php echo urlencode($id_categorie); ?>&phone=<?php echo urlencode($phone); ?>" class="btn-demander">Demander</a>
             </div>
 
         <?php
         } else {
-            // Display an error message if parameters are missing
+            // Display error message if parameters are missing
             echo "<div class='error-message'>";
             echo "<h2>Oops!</h2>";
             echo "<p>Aucun détail de service n'a été trouvé ou les informations sont incomplètes.</p>";
             echo "<p>Veuillez retourner à la page principale et sélectionner un service.</p>";
-            echo "<a href='service.php'>Retour à la page des services</a>";
+            echo "<a href='services-user.php'>Retour à la page des services</a>";
             echo "</div>";
         }
         ?>
     </div>
 
     <script>
-        // Function to toggle comment form visibility
         function toggleCommentForm() {
             const form = document.getElementById('commentForm');
             form.classList.toggle('show');
         }
 
-        // Function to submit comment
         function submitComment(event) {
             event.preventDefault();
 
             const user = document.getElementById('commentUser').value;
             const text = document.getElementById('commentText').value;
             const rating = parseFloat(document.getElementById('commentRating').value);
-            const time = 'il y a quelques secondes'; // Placeholder, use actual timestamp in production
+            const time = 'il y a quelques secondes';
 
             if (user && text && !isNaN(rating)) {
                 const newComment = {
@@ -262,7 +254,7 @@ $phone = isset($_GET['phone']) ? htmlspecialchars(urldecode($_GET['phone'])) : '
                 commentDiv.innerHTML = `
                     <div class="comment-content">
                         <div class="comment-header">
-                            <span class="comment-user">User ${user}</span>
+                            <span class="comment-user">${user}</span>
                             <span class="comment-time">${time}</span>
                         </div>
                         <p class="comment-text">${text}</p>
@@ -298,7 +290,6 @@ $phone = isset($_GET['phone']) ? htmlspecialchars(urldecode($_GET['phone'])) : '
             }
         }
 
-        // Function to generate star rating HTML
         function generateStars(rating) {
             let stars = '';
             const fullStars = Math.floor(rating);

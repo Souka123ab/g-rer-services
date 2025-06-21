@@ -9,7 +9,7 @@
 <body>
     <!-- Header -->
 <?php
-require_once '../include/nav.html';
+require_once '../include/nav.php';
 ?>
 
     <!-- Main Content -->
