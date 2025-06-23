@@ -33,18 +33,7 @@
             padding: 15px 0;
         }
 
-        .logo {
-            display: flex;
-            align-items: center;
-            font-size: 20px;
-            font-weight: bold;
-            color: #4a9eff;
-        }
-
-        .logo::before {
-            content: "🏠";
-            margin-right: 8px;
-        }
+   
 
         .nav {
             display: flex;
@@ -402,3 +391,9 @@
                 gap: 20px;
             }
         }
+        .action-btn.btn-prestataire.disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+    pointer-events: none;
+    opacity: 0.6;
+}

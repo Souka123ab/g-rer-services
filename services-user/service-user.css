@@ -6,7 +6,7 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background-color: #f8f9fa;
+    background-color: #FBFFFF;
     color: #333;
     line-height: 1.6;
 }
@@ -24,7 +24,7 @@ a {
 
 /* Search Section */
 .search-section {
-    background: white;
+    /* background: white; */
     padding: 2rem 0;
     border-bottom: 1px solid #eee;
 }
@@ -90,7 +90,7 @@ a {
 /* Categories Section */
 .categories-section {
     padding: 3rem 0;
-    background: white;
+    /* background: white; */
 }
 
 .categories-section h2 {

@@ -1,40 +1,51 @@
 <?php
+session_start();
 require_once '/xampp/htdocs/PFE/include/conexion.php';
 
-session_start();
-
-// Rediriger vers la page de connexion si l'utilisateur n'est pas connecté
+// Redirection si l'utilisateur n'est pas connecté
 if (!isset($_SESSION['user_id'])) {
     header("Location: /PFE/auth/seconnecter.php");
     exit;
 }
 
-$user_id = $_SESSION['user_id'] ?? 1;
+$user_id = $_SESSION['user_id'];
 
 // Récupération via URL
 $category = $_GET['service_name'] ?? '';
-$id_categorie = $_GET['id_categorie'] ?? '';
+$id_categorie = isset($_GET['id_categorie']) && is_numeric($_GET['id_categorie']) ? $_GET['id_categorie'] : '';
+$id_service = isset($_GET['id_service']) && is_numeric($_GET['id_service']) ? $_GET['id_service'] : '';
 $phone = $_GET['phone'] ?? '';
+$ville = $_GET['ville'] ?? ''; // Ajout de la récupération de ville si passée
 
 // Validate id_categorie
 if ($id_categorie) {
     $stmt = $pdo->prepare("SELECT id_categorie FROM categorie WHERE id_categorie = ?");
     $stmt->execute([$id_categorie]);
     if (!$stmt->fetch()) {
-        echo "<p class='error'>❌ Catégorie invalide.</p>";
         $id_categorie = '';
+        echo "<p class='error'>❌ Catégorie invalide.</p>";
+    }
+}
+
+// Validate id_service
+if ($id_service) {
+    $stmt = $pdo->prepare("SELECT id_service FROM service WHERE id_service = ?");
+    $stmt->execute([$id_service]);
+    if (!$stmt->fetch()) {
+        $id_service = '';
+        echo "<p class='error'>❌ Service invalide.</p>";
     }
 }
 
 // Traitement du formulaire
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $id_categorie = $_POST['id_categorie'] ?? '';
+    $id_service = $_POST['id_service'] ?? '';
     $date_service = $_POST['service-date'] ?? '';
-    $time_service = $_POST['service-time'] ?? ''; // New time input
+    $time_service = $_POST['service-time'] ?? '';
     $phone = $_POST['phone'] ?? '';
     $ville = $_POST['city'] ?? '';
     $status = $_POST['status'] ?? '';
-    $category = $_POST['service_name'] ?? '';
 
     // Combine date and time into a single datetime string
     if (!empty($date_service) && !empty($time_service)) {
@@ -45,34 +56,26 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $date_service = null;
     }
 
-    if (!empty($id_categorie) && $date_service && !empty($phone) && !empty($ville) && !empty($status)) {
+    if (!empty($id_categorie) && !empty($id_service) && $date_service && !empty($phone) && !empty($ville) && !empty($status)) {
         try {
-            $stmtService = $pdo->prepare("SELECT id_service FROM service WHERE id_categorie = ? LIMIT 1");
-            $stmtService->execute([$id_categorie]);
-            $id_service = $stmtService->fetchColumn();
+            $stmt = $pdo->prepare("
+                INSERT INTO reservation (
+                    date_reservation, date_service, status, user_id, id_service, id_categorie, phone, ville
+                ) VALUES (
+                    NOW(), ?, ?, ?, ?, ?, ?, ?
+                )
+            ");
+            $stmt->execute([
+                $date_service, $status, $user_id,
+                $id_service, $id_categorie, $phone, $ville
+            ]);
 
-            if (!$id_service) {
-                echo "<p class='error'>❌ Aucun service trouvé pour cette catégorie.</p>";
-            } else {
-                $stmt = $pdo->prepare("
-                    INSERT INTO reservation (
-                        date_reservation, date_service, status, user_id, id_service, id_categorie, phone, ville
-                    ) VALUES (
-                        NOW(), ?, ?, ?, ?, ?, ?, ?
-                    )
-                ");
-                $stmt->execute([
-                    $date_service, $status, $user_id,
-                    $id_service, $id_categorie, $phone, $ville
-                ]);
-
-                echo "<p class='success'>✅ Service réservé avec succès !</p>";
-            }
+            echo "<p class='success'>✅ Service réservé avec succès !</p>";
         } catch (PDOException $e) {
             echo "<p class='error'>❌ Erreur : " . htmlspecialchars($e->getMessage()) . "</p>";
         }
     } else {
-        echo "<p class='warning'>❗Veuillez remplir tous les champs.</p>";
+        echo "<p class='warning'>❗ Veuillez remplir tous les champs.</p>";
     }
 }
 ?>
@@ -117,13 +120,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     </select>
                 </div>
 
+                <!-- Service ID (hidden) -->
+                <input type="hidden" name="id_service" value="<?= htmlspecialchars($id_service) ?>">
+
                 <!-- Date du service -->
                 <div class="form-group">
                     <label for="service-date">Date du service</label>
                     <input type="date" id="service-date" name="service-date" class="form-input" required>
                 </div>
 
-                <!-- Time du service -->
+                <!-- Heure du service -->
                 <div class="form-group">
                     <label for="service-time">Heure du service</label>
                     <input type="time" id="service-time" name="service-time" class="form-input" required>

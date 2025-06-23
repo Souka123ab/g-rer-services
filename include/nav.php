@@ -20,6 +20,9 @@ if (session_status() === PHP_SESSION_NONE) {
             <div class="header-content">
                 <!-- Navigation avec Logo -->
                 <nav class="nav">
+                    <!-- Hamburger Menu -->
+
+
                     <div class="logo">
                         <img src="/PFE/image/Capture d'écran 2025-06-16 131020.png" alt="Souka.ma Logo" class="logo-img">
                     </div>
@@ -70,9 +73,15 @@ if (session_status() === PHP_SESSION_NONE) {
                             </a>
                         </button>
                     <?php endif; ?>
+                     <button class="hamburger" id="hamburger">
+                 <i class="fas fa-bars"></i>
+                </button>
                 </div>
+                 
             </div>
+             
         </div>
+      
     </header>
 
     <script>
@@ -87,6 +96,24 @@ if (session_status() === PHP_SESSION_NONE) {
           });
         });
       });
+     
+  document.addEventListener('DOMContentLoaded', function () {
+    const hamburger = document.getElementById('hamburger');
+    const nav = document.querySelector('.nav');
+
+    hamburger.addEventListener('click', function () {
+      nav.classList.toggle('active');
+    });
+
+    // Facultatif : Fermer le menu quand on clique sur un lien
+    document.querySelectorAll('.nav-link').forEach(link => {
+      link.addEventListener('click', () => {
+        nav.classList.remove('active');
+      });
+    });
+  });
+
+
     </script>
 </body>
 </html>

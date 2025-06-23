@@ -76,88 +76,53 @@ if (!isset($_SESSION['user_id'])) {
                                    FROM _user u 
                                    LEFT JOIN service s ON u.user_id = s.user_id 
                                    WHERE u.is_provider = 1 
-                                   LIMIT 4"); // Removed description
-                $newProviders = [];
+                                   LIMIT 4");
                 while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-    $avatar = "image/default-avatar.png";
-    $nom = $row['nom']; // Correction ici
-    $ville = $row['ville'];
-    $titre_service = $row['titre']; // Correction ici
-    $prix = $row['prix'];
-    $image = $row['image'] ?? 'image/default-service.jpg';
-?>
-    <div class="service-card">
-        <div class="service-image">
-            <img src="<?= htmlspecialchars($image); ?>" alt="<?= htmlspecialchars($titre_service); ?>">
-        </div>
-        <div class="service-content">
-            <div class="profile-header">
-                <div class="profile-info">
-                    <div class="avatar">
-                        <img src="<?= htmlspecialchars($avatar); ?>" alt="<?= htmlspecialchars($nom); ?>">
-                    </div>
-                    <div class="profile-details">
-                        <div class="profile-name"><?= htmlspecialchars($nom); ?></div>
-                        <div class="profile-meta">
-                            <span class="location"><?= htmlspecialchars($ville); ?></span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="service-description">
-                <?= htmlspecialchars($titre_service); ?>
-            </div>
-            <div class="service-footer">
-                <div class="price-section">
-                    <div class="price-label">Prix</div>
-                    <div class="price"><?= htmlspecialchars($prix); ?> DH</div>
-                </div>
-                <a href="/PFE/pestataire/service.php?user_id=<?= htmlspecialchars($row['user_id']); ?>" class="service-button <?= strtolower(str_replace(' ', '-', $ville)); ?>-btn">
-                    Voir services
-                </a>
-            </div>
-        </div>
-    </div>
-<?php } ?>
-
+                    $avatar = "image/default-avatar.png";
+                    $nom = $row['nom'];
+                    $ville = $row['ville'];
+                    $titre_service = $row['titre'] ?? 'Aucun service';
+                    $prix = $row['prix'] ?? 'N/A';
+                    $image = $row['image'] ?? 'image/default-service.jpg';
             ?>
             <div class="service-card">
                 <div class="service-image">
-                    <img src="<?php echo htmlspecialchars($provider['image'] ?? 'image/default-service.jpg'); ?>" alt="<?php echo htmlspecialchars($provider['titre'] ?? 'Service'); ?>">
+                    <img src="<?= htmlspecialchars($image); ?>" alt="<?= htmlspecialchars($titre_service); ?>">
                 </div>
                 <div class="service-content">
                     <div class="profile-header">
                         <div class="profile-info">
                             <div class="avatar">
-                                <img src="<?php echo htmlspecialchars($avatar); ?>" alt="<?php echo htmlspecialchars($provider['nom']); ?>">
+                                <img src="<?= htmlspecialchars($avatar); ?>" alt="<?= htmlspecialchars($nom); ?>">
                             </div>
                             <div class="profile-details">
-                                <div class="profile-name"><?php echo htmlspecialchars($provider['nom']); ?></div>
+                                <div class="profile-name"><?= htmlspecialchars($nom); ?></div>
                                 <div class="profile-meta">
-                                    <span class="location"><?php echo htmlspecialchars($provider['ville']); ?></span>
+                                    <span class="location"><?= htmlspecialchars($ville); ?></span>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="service-description">
-                        <?php echo htmlspecialchars($services[0]['titre'] ?? 'Aucun service'); ?><br>
-                        <!-- Removed description since it's not in the table -->
+                        <?= htmlspecialchars($titre_service); ?>
                     </div>
                     <div class="service-footer">
                         <div class="price-section">
                             <div class="price-label">Prix</div>
-                            <div class="price"><?php echo htmlspecialchars($services[0]['prix'] ?? 'N/A'); ?> DH</div>
+                            <div class="price"><?= htmlspecialchars($prix); ?> DH</div>
                         </div>
-                        <a href="/PFE/pestataire/service.php?user_id=<?php echo htmlspecialchars($userId); ?>" class="service-button <?php echo $buttonClass; ?>">
+                        <a href="/PFE/services-user/detail.php?user_id=<?= htmlspecialchars($row['user_id']); ?>" class="service-button <?= strtolower(str_replace(' ', '-', $ville)); ?>-btn">
                             Voir services
                         </a>
+                        <!-- <button class="favorite-btn" data-user-id="<?= htmlspecialchars($row['user_id']); ?>">
+                            <i class="fas fa-heart"></i>
+                        </button> -->
                     </div>
                 </div>
             </div>
             <?php
                 }
-            
-            catch (PDOException $e) {
+            } catch (PDOException $e) {
                 echo "<p style='color:red;'>Erreur : " . htmlspecialchars($e->getMessage()) . "</p>";
             }
             ?>
@@ -171,63 +136,69 @@ if (!isset($_SESSION['user_id'])) {
         <div class="providers-grid">
             <?php
             try {
-                $stmt = $pdo->query("SELECT u.nom, u.ville, u.user_id, u.is_provider, s.titre, s.prix, s.image 
-                                   FROM _user u 
-                                   LEFT JOIN service s ON u.user_id = s.user_id 
-                                   WHERE u.is_provider = 1");
-                $providers = [];
-                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                    $providers[$row['user_id']] = $row;
+                // Check if the current user is a provider and has services
+                $currentUserId = $_SESSION['user_id'];
+                $stmtCheckProvider = $pdo->prepare("SELECT is_provider FROM _user WHERE user_id = ?");
+                $stmtCheckProvider->execute([$currentUserId]);
+                $currentUser = $stmtCheckProvider->fetch(PDO::FETCH_ASSOC);
+                $isCurrentUserProvider = $currentUser['is_provider'] ?? 0;
+
+                $stmtCheckServices = $pdo->prepare("SELECT COUNT(*) FROM service WHERE user_id = ?");
+                $stmtCheckServices->execute([$currentUserId]);
+                $hasServices = $stmtCheckServices->fetchColumn() > 0;
+
+                // Query providers with services
+                if ($isCurrentUserProvider && $hasServices) {
+                    // If the current user is a provider and has services, show other providers with services excluding the current user
+                    $stmt = $pdo->prepare("SELECT u.nom, u.ville, u.user_id, s.titre, s.prix, s.image, s.telephone 
+                                         FROM _user u 
+                                         INNER JOIN service s ON u.user_id = s.user_id 
+                                         WHERE u.is_provider = 1 AND u.user_id != ? 
+                                         LIMIT 4");
+                    $stmt->execute([$currentUserId]);
+                } else {
+                    // If the current user is not a provider or has no services, show other providers with services
+                    $stmt = $pdo->prepare("SELECT u.nom, u.ville, u.user_id, s.titre, s.prix, s.image, s.telephone 
+                                         FROM _user u 
+                                         INNER JOIN service s ON u.user_id = s.user_id 
+                                         WHERE u.is_provider = 1 AND u.user_id != ? 
+                                         LIMIT 4");
+                    $stmt->execute([$currentUserId]);
                 }
 
-                if ($providers) {
-                    foreach ($providers as $provider) {
-                        $rating = max(0, min(5, (float)(rand(3, 5) + (rand(0, 1) ? 0.5 : 0)))); // Random rating between 3.0 and 5.0
-                        $reviewsCount = rand(10, 50); // Random review count
-                        $avatar = "image/default-avatar.png"; // Default avatar
-                        $profession = $provider['ville']; // Use ville as profession
-                        $buttonClass = strtolower(str_replace(' ', '-', $profession)) . '-btn';
-                        $badgeClass = strtolower(str_replace(' ', '-', $profession));
+                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                    $avatar = "/PFE/image/profile.png";
+                    $nom = $row['nom'];
+                    $ville = $row['ville'];
+                    $titre_service = $row['titre'] ?? 'Aucun service';
+                    $prix = $row['prix'] ?? 'N/A';
+                    $image = $row['image'] ?? '/image/profile.png';
+                    $buttonClass = strtolower(str_replace(' ', '-', $ville)) . '-btn';
             ?>
             <div class="provider-card">
                 <div class="profile-image">
-                    <img src="<?php echo htmlspecialchars($avatar); ?>" alt="<?php echo htmlspecialchars($provider['nom']); ?>" class="avatar">
+                    <img src="<?= htmlspecialchars($avatar); ?>" alt="<?= htmlspecialchars($nom); ?>" class="avatar">
                 </div>
-                <div class="service-badge <?php echo $badgeClass; ?>">
-                    <?php echo htmlspecialchars($profession); ?>
+                <div class="service-badge <?= strtolower(str_replace(' ', '-', $ville)); ?>">
+                    <?= htmlspecialchars($ville); ?>
                 </div>
-                <h3 class="provider-name"><?php echo htmlspecialchars($provider['nom']); ?></h3>
-                <div class="rating">
-                    <div class="stars">
-                        <?php
-                        $fullStars = floor($rating);
-                        $halfStar = $rating - $fullStars >= 0.5 ? 1 : 0;
-                        $emptyStars = max(0, 5 - $fullStars - $halfStar);
-                        echo str_repeat('<span class="star filled">★</span>', $fullStars);
-                        if ($halfStar) echo '<span class="star half">★</span>';
-                        echo str_repeat('<span class="star empty">★</span>', $emptyStars);
-                        ?>
-                    </div>
-                    <span class="rating-text"><?php echo number_format($rating, 1); ?> (<?php echo $reviewsCount; ?> avis)</span>
-                </div>
+                <h3 class="provider-name"><?= htmlspecialchars($nom); ?></h3>
                 <div class="location">
                     <svg class="location-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                         <circle cx="12" cy="10" r="3"></circle>
                     </svg>
-                    <span><?php echo htmlspecialchars($provider['ville']); ?></span>
+                    <span><?= htmlspecialchars($ville); ?></span>
                 </div>
-                <a href="/PFE/pestataire/service.php?user_id=<?php echo htmlspecialchars($provider['user_id']); ?>" class="service-button <?php echo $buttonClass; ?>">
-                    Demander un service
-                </a>
-                <a href="/PFE/pestataire/pestataire-compte.php?user_id=<?php echo htmlspecialchars($provider['user_id']); ?>" class="service-button view-profile-btn">
+                <a id="pr" href="/PFE/pestataire/pestataire-compte.php?user_id=<?= htmlspecialchars($row['user_id']); ?>" class="service-button <?= $buttonClass ?>">
                     Voir profil
                 </a>
             </div>
             <?php
-                    }
-                } else {
-                    echo "<p>Aucun prestataire trouvé.</p>";
+                }
+                // If no providers with services are found, display a message
+                if ($stmt->rowCount() == 0) {
+                    echo "<p>Aucun prestataire avec des services trouvé.</p>";
                 }
             } catch (PDOException $e) {
                 echo "<p style='color:red;'>Erreur : " . htmlspecialchars($e->getMessage()) . "</p>";
@@ -235,6 +206,7 @@ if (!isset($_SESSION['user_id'])) {
             ?>
         </div>
     </div>
+
     <!-- Footer -->
     <?php
      require_once './include/footer.html';
@@ -273,6 +245,27 @@ if (!isset($_SESSION['user_id'])) {
                         provider.style.display = 'none';
                     } else {
                         provider.style.display = 'block';
+                    }
+                });
+            });
+        });
+        document.addEventListener('DOMContentLoaded', () => {
+            const favoriteButtons = document.querySelectorAll('.favorite-btn');
+
+            favoriteButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const userId = button.getAttribute('data-user-id');
+                    const icon = button.querySelector('i');
+
+                    // Toggle the favorite state
+                    if (button.classList.contains('favorited')) {
+                        button.classList.remove('favorited');
+                        icon.style.color = 'black'; // Reset color when unfavorited
+                    } else {
+                        button.classList.add('favorited');
+                        icon.style.color = 'red'; // Change color when favorited
+                        // Redirect to favorit.php with user_id
+                        window.location.href = `/PFE/favorit.php?user_id=${userId}`;
                     }
                 });
             });

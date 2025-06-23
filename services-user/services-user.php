@@ -24,18 +24,34 @@ if (isset($_SESSION['service_supprime'])) {
 
 // Récupération des catégories
 $category_map = [];
-$stmt = $pdo->query("SELECT id_categorie, nom FROM categorie");
-while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-    $category_map[$row['id_categorie']] = $row['nom'];
+try {
+    $stmt = $pdo->query("SELECT id_categorie, nom FROM categorie");
+    $category_map = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+} catch (PDOException $e) {
+    echo "<p style='color: red;'>Erreur lors de la récupération des catégories : " . htmlspecialchars($e->getMessage()) . "</p>";
+    exit;
 }
 
-// ✅ CORRECTION ICI : suppression de $$stmt
-$stmt = $pdo->query("SELECT id_service, titre, prix, user_id, id_categorie, image, telephone, date FROM service ORDER BY date DESC");
-$services = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-if (!$services) {
-    echo "<p>Aucun service trouvé.</p>";
+// Récupération des services
+$services = [];
+try {
+    $stmt = $pdo->query("SELECT id_service, titre, prix, user_id, id_categorie, image, telephone, date, discription FROM service ORDER BY date DESC");
+    $services = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    echo "<p style='color: red;'>Erreur lors de la récupération des services : " . htmlspecialchars($e->getMessage()) . "</p>";
     exit;
+}
+
+// Vérifier si des services existent
+if (empty($services)) {
+    echo "<p>Aucun service trouvé.</p>";
+} else {
+    // Regrouper les services par catégorie
+    $services_by_category = [];
+    foreach ($services as $service) {
+        $cat_name = isset($category_map[$service['id_categorie']]) ? $category_map[$service['id_categorie']] : 'Autres';
+        $services_by_category[$cat_name][] = $service;
+    }
 }
 ?>
 
@@ -49,17 +65,7 @@ if (!$services) {
     <link rel="stylesheet" href="/PFE/include/nav.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        .service-date {
-            font-size: 0.9em;
-            color: #333;
-            text-align: center;
-            margin-bottom: 10px;
-            padding: 5px 0;
-            background-color: #f0f0f0;
-            display: block;
-            min-height: 20px;
-        }
-        .btn-edit, .btn-delete {
+        .btn-edit, .btn-delete, .btn-favorite, .btn-demander, .btn-detail {
             padding: 8px 12px;
             margin: 5px;
             border: none;
@@ -82,6 +88,56 @@ if (!$services) {
         .btn-delete:hover {
             background-color: #c1134e;
         }
+        .btn-favorite {
+            background-color: #D54286;
+            color: white;
+        }
+        .btn-favorite:hover {
+            background-color: #C1356D;
+        }
+        .btn-demander {
+            background-color: #D54286;
+            color: white;
+        }
+        .btn-demander:hover {
+            background-color: #C1356D;
+        }
+        .btn-detail {
+            background-color: #2196F3;
+            color: white;
+        }
+        .btn-detail:hover {
+            background-color: #1976D2;
+        }
+        .service-card {
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        .service-card:hover {
+            background-color: #f5f5f5;
+        }
+        .actions {
+            pointer-events: auto;
+        }
+        .service-card * {
+            pointer-events: none;
+        }
+        .service-card .actions * {
+            pointer-events: auto;
+        }
+        .category-item {
+            cursor: pointer;
+        }
+        .category-item:hover {
+            opacity: 0.8;
+        }
+        .category-icon.blue { background-color: #4a90e2; }
+        .category-icon.green { background-color: #4caf50; }
+        .category-icon.orange { background-color: #ff9800; }
+        .category-icon.pink { background-color: #e91e63; }
+        .category-icon.purple { background-color: #9c27b0; }
+        .category-icon.gray { background-color: #666; }
     </style>
 </head>
 <body>
@@ -92,11 +148,7 @@ if (!$services) {
             <div class="search-bar">
                 <div class="search-input">
                     <i class="fas fa-search"></i>
-                    <input type="text" placeholder="Que recherchez-vous ?">
-                </div>
-                <div class="location-input">
-                    <i class="fas fa-map-marker-alt"></i>
-                    <input type="text" placeholder="Votre ville ou code postal">
+                    <input type="text" placeholder="Rechercher un service (ex: Plombier, Jardinage)" id="search-keyword">
                 </div>
                 <button class="btn btn-search"><i class="fas fa-search"></i> Rechercher</button>
                 <button class="btn btn-filter"><i class="fas fa-sliders-h"></i></button>
@@ -108,12 +160,22 @@ if (!$services) {
         <div class="container">
             <h2>Catégories populaires</h2>
             <div class="categories-grid">
-                <div class="category-item"><div class="category-icon blue"><i class="fas fa-wrench"></i></div><span>Plomberie</span></div>
-                <div class="category-item"><div class="category-icon green"><i class="fas fa-seedling"></i></div><span>Jardinage</span></div>
-                <div class="category-item"><div class="category-icon orange"><i class="fas fa-cog"></i></div><span>Mécanique</span></div>
-                <div class="category-item"><div class="category-icon pink"><i class="fas fa-broom"></i></div><span>Ménage</span></div>
-                <div class="category-item"><div class="category-icon purple"><i class="fas fa-bolt"></i></div><span>Electricité</span></div>
-                <div class="category-item"><div class="category-icon gray"><i class="fas fa-ellipsis-h"></i></div><span>Voir plus</span></div>
+                <?php
+                $popular_categories = [
+                    'Plomberie' => ['icon' => 'fa-wrench', 'color' => 'blue'],
+                    'Jardinage' => ['icon' => 'fa-seedling', 'color' => 'green'],
+                    'Mécanique' => ['icon' => 'fa-cog', 'color' => 'orange'],
+                    'Ménage' => ['icon' => 'fa-broom', 'color' => 'pink'],
+                    'Electricité' => ['icon' => 'fa-bolt', 'color' => 'purple']
+                ];
+                foreach ($popular_categories as $cat => $style) {
+                    echo '<div class="category-item" data-category="' . htmlspecialchars(strtolower($cat)) . '">';
+                    echo '<div class="category-icon ' . $style['color'] . '"><i class="fas ' . $style['icon'] . '"></i></div>';
+                    echo '<span>' . htmlspecialchars($cat) . '</span>';
+                    echo '</div>';
+                }
+                ?>
+                <div class="category-item" data-category="all"><div class="category-icon gray"><i class="fas fa-ellipsis-h"></i></div><span>Voir tout</span></div>
             </div>
         </div>
     </section>
@@ -121,78 +183,148 @@ if (!$services) {
     <main class="main-content">
         <div class="container">
             <?php
-            // Regrouper les services par catégorie
-            $services_by_category = [];
-            foreach ($services as $service) {
-                $cat_name = $category_map[$service['id_categorie']] ?? 'Autres';
-                $services_by_category[$cat_name][] = $service;
-            }
+            if (!empty($services_by_category)) {
+                $category_styles = [
+                    'Plomberie' => ['color' => '#4a90e2', 'icon' => 'fa-wrench'],
+                    'Jardinage' => ['color' => '#4caf50', 'icon' => 'fa-seedling'],
+                    'Mécanique' => ['color' => '#ff9800', 'icon' => 'fa-cog'],
+                    'Ménage' => ['color' => '#e91e63', 'icon' => 'fa-broom'],
+                    'Electricité' => ['color' => '#9c27b0', 'icon' => 'fa-bolt'],
+                    'Autres' => ['color' => '#4a90e2', 'icon' => 'fa-wrench']
+                ];
 
-            // Styles par catégorie
-            $category_styles = [
-                'Plomberie' => ['color' => '#4a90e2', 'icon' => 'fa-wrench'],
-                'Jardinage' => ['color' => '#4caf50', 'icon' => 'fa-seedling'],
-                'Mécanique' => ['color' => '#ff9800', 'icon' => 'fa-cog'],
-                'Ménage' => ['color' => '#e91e63', 'icon' => 'fa-broom'],
-                'Electricité' => ['color' => '#9c27b0', 'icon' => 'fa-bolt']
-            ];
+                foreach ($services_by_category as $cat_name => $cat_services) {
+                    $style = $category_styles[$cat_name] ?? ['color' => '#4a90e2', 'icon' => 'fa-wrench'];
+                    $cat_id = array_search($cat_name, $category_map) ?: 0;
+                    echo '<section class="service-section" data-category="' . htmlspecialchars(strtolower($cat_name)) . '">';
+                    echo '<div class="section-header">';
+                    echo '<h3><i class="fas ' . $style['icon'] . '" style="color: ' . $style['color'] . ';"></i> Mes annonces de ' . htmlspecialchars($cat_name) . '</h3>';
+                    echo '</div><div class="services-grid">';
 
-            // Affichage par catégorie
-            foreach ($services_by_category as $cat_name => $cat_services) {
-                $style = $category_styles[$cat_name] ?? ['color' => '#4a90e2', 'icon' => 'fa-wrench'];
-                echo '<section class="service-section">';
-                echo '<div class="section-header">';
-                echo '<h3><i class="fas ' . $style['icon'] . '" style="color: ' . $style['color'] . ';"></i> Mes annonces de ' . htmlspecialchars($cat_name) . '</h3>';
-                echo '<a href="category-details.php?id_categorie=' . array_search($cat_name, $category_map) . '" class="view-more">Plus d\'annonces <i class="fas fa-arrow-right"></i></a>';
-                echo '</div><div class="services-grid">';
+                    foreach ($cat_services as $service) {
+                        $service_date = $service['date'] ? date('d/m/Y H:i:s', strtotime($service['date'])) : 'Date non disponible';
+                        try {
+                            $stmt_user = $pdo->prepare("SELECT nom FROM _user WHERE user_id = ?");
+                            $stmt_user->execute([$service['user_id']]);
+                            $provider_name = $stmt_user->fetchColumn() ?: 'Prestataire';
+                        } catch (PDOException $e) {
+                            $provider_name = 'Prestataire';
+                        }
+                        $params = http_build_query([
+                            'category' => $cat_name,
+                            'image' => $service['image'] ?: '/placeholder.svg',
+                            'provider_avatar' => '/placeholder.svg',
+                            'provider_name' => $provider_name,
+                            'rating' => '4.8',
+                            'price' => $service['prix'],
+                            'phone' => $service['telephone'],
+                            'discription' => $service['discription'] ?: 'Aucune description',
+                            'id_service' => $service['id_service'],
+                            'id_categorie' => $service['id_categorie']
+                        ]);
+                        echo '<div class="service-card">';
+                        echo '<div class="service-box" data-title="' . htmlspecialchars(strtolower($service['titre'])) . '">';
 
-                foreach ($cat_services as $service) {
-                    // Handle date display with fallback
-                    $service_date = $service['date'] ? date('d/m/Y H:i:s', strtotime($service['date'])) : 'Date non disponible';
-                    echo '<a href="detail.php?category=' . urlencode($cat_name) . '&image=' . urlencode($service['image']) . '&provider_avatar=/placeholder.svg&provider_name=' . urlencode($service['titre']) . '&rating=4.8&price=' . urlencode($service['prix'] . ' DH') . '&phone=' . urlencode($service['telephone']) . '">';
-                    echo '<div class="service-card">';
-                    
+                        echo '<div class="service-image">';
+                        echo '<img src="' . htmlspecialchars($service['image'] ?: '/placeholder.svg') . '" alt="Image service">';
+                        echo '</div>';
 
-                    echo '<div class="service-image">';
-                    echo '<img src="' . htmlspecialchars($service['image']) . '" alt="Image service">';
-                    echo '</div>';
+                        echo '<div class="service-content"><div class="provider-info">';
+                        echo '<img src="/placeholder.svg" alt="Provider" class="provider-avatar">';
+                        echo '<div><h4>' . htmlspecialchars($provider_name) . '</h4><div class="rating"><span class="stars">★★★★★</span><span class="rating-count">4.8</span></div></div>';
+                        echo '</div>';
 
-                    echo '<div class="service-content"><div class="provider-info">';
+                        echo '<span class="price">' . htmlspecialchars($service['prix']) . ' DH</span>';
+                        echo '<div class="service-footer"><div class="actions">';
 
-                    // Nom du provider
-                    $stmt_user = $pdo->prepare("SELECT nom FROM _user WHERE user_id = ?");
-                    $stmt_user->execute([$service['user_id']]);
-                    $provider_name = $stmt_user->fetchColumn() ?: 'Prestataire';
+                        if ($service['user_id'] == $_SESSION['user_id']) {
+                            echo '<a href="/PFE/services-user/modifier.php?id_service=' . $service['id_service'] . '" class="btn-edit"><i class="fas fa-pen"></i> Modifier</a>';
+                            echo '<button class="btn-delete" onclick="if(confirm(\'Êtes-vous sûr de vouloir supprimer ce service ?\')){window.location.href=\'/PFE/services-user/supprimer.php?id_service=' . $service['id_service'] . '\';}"><i class="fas fa-trash"></i> Supprimer</button>';
+                        } else {
+                            echo '<button class="btn-favorite" data-href="/PFE/favourite/favourite.php?id_service=' . $service['id_service'] . '"><i class="fas fa-heart"></i> Favori</button>';
+                            echo '<a href="demander.php?service_name=' . urlencode($cat_name) . '&id_categorie=' . $service['id_categorie'] . '&phone=' . urlencode($service['telephone']) . '&id_service=' . $service['id_service'] . '" class="btn-demander"><i class="fas fa-paper-plane"></i> Demander</a>';
+                        }
 
-                    echo '<img src="/placeholder.svg" alt="Provider" class="provider-avatar">';
-                    echo '<div><h4>' . htmlspecialchars($provider_name) . '</h4><div class="rating"><span class="stars">★★★★★</span><span class="rating-count">4.8</span></div></div>';
-                    echo '</div>'; // provider-info
+                        echo '<a href="detail.php?' . $params . '" class="btn-detail">Détail</a>';
 
-                    echo '<span class="price">' . htmlspecialchars($service['prix']) . ' DH</span>';
-                    echo '<div class="service-footer"><div class="actions">';
-                    echo '<button class="btn-favorite" data-href="/PFE/favourite/favourite.php">Favorite</button>';
-                    echo '<button class="btn-demander" data-href="demander.php?service_name=' . urlencode($cat_name) . '&id_categorie=' . $service['id_categorie'] . '&phone=' . urlencode($service['telephone']) . '">Demander</button>';
-                    echo '<div class="service-date">' . htmlspecialchars($service_date) . '</div>';
-
-                    // Add Edit and Delete buttons for the logged-in user's services
-                   // Afficher Modifier/Supprimer uniquement si l'utilisateur connecté est le propriétaire du service
-if ($service['user_id'] == $_SESSION['user_id']) {
-    echo '<a href="/PFE/services-user/modifier.php?id_service=' . $service['id_service'] . '" class="btn-edit">Modifier</a>';
-    echo '<button class="btn-delete" onclick="if(confirm(\'Êtes-vous sûr de vouloir supprimer ce service ?\')){window.location.href=\'/PFE/supprimer-service.php?id_service=' . $service['id_service'] . '\';}">Supprimer</button>';
-}
-
-
-                    echo '</div></div>'; // service-footer + actions
-                    echo '</div></div></a>'; // service-content + service-card + <a>
+                        echo '<div class="service-date">' . htmlspecialchars($service_date) . '</div>';
+                        echo '</div></div>'; // service-footer + actions
+                        echo '</div></div>'; // service-content + service-box
+                        echo '</div>'; // service-card
+                    }
+                    echo '</div></section>';
                 }
-
-                echo '</div></section>'; // services-grid + section
             }
             ?>
         </div>
     </main>
 
     <?php require_once '../include/footer.html'; ?>
-    <script src="services-user.js"></script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const keywordInput = document.getElementById('search-keyword');
+        const searchButton = document.querySelector('.btn-search');
+        const serviceBoxes = document.querySelectorAll('.service-box');
+        const categoryItems = document.querySelectorAll('.category-item');
+        const serviceSections = document.querySelectorAll('.service-section');
+
+        function normalize(str) {
+            return str.trim().toLowerCase();
+        }
+
+        function filterServices() {
+            const keyword = normalize(keywordInput.value);
+
+            serviceBoxes.forEach(box => {
+                const title = box.dataset.title;
+                const matchesKeyword = !keyword || title.includes(keyword);
+
+                if (matchesKeyword) {
+                    box.style.display = 'block';
+                } else {
+                    box.style.display = 'none';
+                }
+            });
+        }
+
+        function filterByCategory(category) {
+            serviceSections.forEach(section => {
+                const sectionCategory = section.dataset.category;
+                if (category === 'all' || sectionCategory === category) {
+                    section.style.display = 'block';
+                } else {
+                    section.style.display = 'none';
+                }
+            });
+
+            // Réinitialiser la recherche par mot-clé
+            keywordInput.value = '';
+            filterServices(); // Appliquer le filtrage pour afficher tous les services visibles
+        }
+
+        // Filtrage par mot-clé au clic sur le bouton de recherche
+        searchButton.addEventListener('click', filterServices);
+
+        // Filtrage par catégorie au clic sur une catégorie
+        categoryItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const category = item.dataset.category;
+                filterByCategory(category);
+            });
+        });
+
+        // Prevent action buttons from triggering the service card link
+        document.querySelectorAll('.btn-edit, .btn-delete, .btn-favorite, .btn-demander, .btn-detail').forEach(button => {
+            button.addEventListener('click', (event) => {
+                event.stopPropagation();
+                const href = button.getAttribute('data-href') || button.getAttribute('href');
+                if (href) {
+                    window.location.href = href;
+                }
+            });
+        });
+    });
+    </script>
 </body>
 </html>

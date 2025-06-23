@@ -1,4 +1,11 @@
 <?php
+
+session_start();
+if (isset($_SESSION['user_id'])) {
+    header("Location: ../acceuil.php");
+    exit;
+}
+
 // Affichage des erreurs (à désactiver en production)
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);

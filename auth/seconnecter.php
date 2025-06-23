@@ -1,8 +1,17 @@
 <?php
-session_start();
-require_once '../include/conexion.php';
 
+session_start();
+
+// Empêcher l'accès à cette page si l'utilisateur est déjà connecté
+if (isset($_SESSION['user_id'])) {
+    header("Location: ../acceuil.php");
+    exit;
+}
+
+require_once '../include/conexion.php';
 $error_message = '';
+// ... (reste du code)
+
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // echo "we post this "; // Pour débogage seulement

@@ -2,38 +2,71 @@
 session_start();
 require_once '/xampp/htdocs/PFE/include/conexion.php';
 
-// Redirect to login page if user is not logged in
+// Redirection si l'utilisateur n'est pas connecté
 if (!isset($_SESSION['user_id'])) {
     header("Location: /PFE/auth/seconnecter.php");
     exit;
 }
 
-// Fetch provider data from _user table
-$providerData = [];
-$userId = isset($_GET['user_id']) ? (int)$_GET['user_id'] : $_SESSION['user_id']; // Use URL user_id or logged-in user_id
-try {
-    $stmt = $pdo->prepare("SELECT nom, ville AS profession, numero AS comments, user_id AS views, email AS about FROM _user WHERE user_id = ?");
+// Déterminer l'ID du prestataire
+$userId = isset($_GET['user_id']) ? (int)$_GET['user_id'] : $_SESSION['user_id'];
+
+// Incrémenter le nombre de visites si ce n'est pas son propre profil
+if ($userId !== $_SESSION['user_id']) {
+    $stmt = $pdo->prepare("UPDATE _user SET views = views + 1 WHERE user_id = ?");
     $stmt->execute([$userId]);
-    $providerData = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
-    if (empty($providerData['nom']) && isset($_SESSION['nom'])) {
-        $providerData['nom'] = $_SESSION['nom']; // Fallback to session
-    }
-    $providerData['reviews'] = [
-        ['name' => 'Soukayna machraa', 'rating' => 5, 'text' => 'Très bon travail merci!'],
-        ['name' => 'Soukayna machraa', 'rating' => 5, 'text' => 'Très bon travail merci!']
-    ];
-    $providerData['hours'] = [
+}
+
+// Fonction pour récupérer toutes les données du prestataire
+function getProviderData($pdo, $userId) {
+    $stmt = $pdo->prepare("SELECT nom, ville AS profession, numero AS comments, views, email AS about, numero AS phone FROM _user WHERE user_id = ?");
+    $stmt->execute([$userId]);
+    $data = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+    // Heures d'ouverture (fixes)
+    $data['hours'] = [
         'Lundi' => ['09:00 - 12:00', '14:00 - 16:00'],
         'Mardi' => ['09:00 - 12:00', '14:00 - 16:00'],
         'Mercredi' => ['09:00 - 12:00', '14:00 - 16:00'],
         'Jeudi' => ['09:00 - 12:00', '14:00 - 16:00'],
         'Vendredi' => ['09:00 - 12:00', '14:00 - 16:00']
     ];
+
+    // Récupérer les avis
+    $stmt = $pdo->prepare("SELECT reviewer_name AS name, rating, text FROM reviews WHERE user_id = ? ORDER BY created_at DESC");
+    $stmt->execute([$userId]);
+    $data['reviews'] = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+    return $data;
+}
+
+try {
+    // Charger les données
+    $providerData = getProviderData($pdo, $userId);
+
+    // Soumission d'un commentaire
+    if (isset($_POST['submit_comment']) && !empty($_POST['comment_text']) && !empty($_POST['rating'])) {
+        $commentText = trim($_POST['comment_text']);
+        $rating = (int)$_POST['rating'];
+        $reviewerName = $_SESSION['nom'] ?? 'Anonyme';
+
+        // Insertion dans la table reviews
+        $stmt = $pdo->prepare("INSERT INTO reviews (user_id, reviewer_name, rating, text) VALUES (?, ?, ?, ?)");
+        $stmt->execute([$userId, $reviewerName, $rating, $commentText]);
+
+        // Incrémenter le compteur de commentaires
+        $stmt = $pdo->prepare("UPDATE _user SET numero = numero + 1 WHERE user_id = ?");
+        $stmt->execute([$userId]);
+
+        // Recharger les données mises à jour
+        $providerData = getProviderData($pdo, $userId);
+    }
+
 } catch (PDOException $e) {
     echo "<p style='color:red;'>Erreur : " . htmlspecialchars($e->getMessage()) . "</p>";
 }
 
-// Logout function
+// Déconnexion
 if (isset($_GET['logout'])) {
     session_destroy();
     header("Location: /PFE/auth/seconnecter.php");
@@ -66,8 +99,8 @@ if (isset($_GET['logout'])) {
                 
                 <div class="profile-stats">
                     <div class="stat-item">
-                        <div class="stat-label">Commentaires</div>
-                        <div class="stat-value"><?php echo htmlspecialchars($providerData['comments'] ?? 0); ?></div>
+                       <div class="stat-label">Commentaires</div>
+                       <div class="stat-value"><?php echo htmlspecialchars($providerData['comments'] ?? 0); ?></div>
                     </div>
                     <div class="stat-item">
                         <div class="stat-label">Vistes de profil</div>
@@ -76,10 +109,34 @@ if (isset($_GET['logout'])) {
                 </div>
                 
                 <div class="profile-actions">
-                    <button class="action-btn btn-comments">⭐ Commentaires</button>
-                    <button class="action-btn btn-call">📞 appel</button>
-                    <button class="action-btn btn-favorite">❤️ Favourit</button>
+                    <button class="action-btn btn-comments" id="comments-btn">⭐ Commentaires</button>
+                    <button class="action-btn btn-call" id="call-btn">📞 Appel</button>
+                    <button class="action-btn btn-favorite">❤️ Favori</button>
                 </div>
+                
+                <!-- Phone number display (hidden by default) -->
+                <div id="phone-display" style="display:none; margin-top:10px; font-size:1.2em; color:#333;">
+                    Numéro de téléphone : <?php echo htmlspecialchars($providerData['phone'] ?? 'Non disponible'); ?>
+                </div>
+                
+                <!-- Comment input form (hidden by default) -->
+                <form id="comment-form" method="POST" style="display:none; margin-top:20px;">
+                    <div style="margin-bottom:10px;">
+                        <label for="rating">Note (1-5) :</label>
+                        <select name="rating" id="rating" required>
+                            <option value="">Choisir une note</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom:10px;">
+                        <textarea name="comment_text" id="comment-text" rows="4" style="width:100%;" placeholder="Écrivez votre commentaire..." required></textarea>
+                    </div>
+                    <button type="submit" name="submit_comment" class="action-btn">Soumettre le commentaire</button>
+                </form>
             </section>
 
             <section class="about-section">
@@ -87,7 +144,7 @@ if (isset($_GET['logout'])) {
                 <p class="about-text"><?php echo nl2br(htmlspecialchars($providerData['about'] ?? '')); ?></p>
             </section>
 
-            <section class="reviews-section">
+            <section class="reviews-section" id="reviews-section">
                 <h2 class="section-title">Avis</h2>
                 <div class="reviews-grid">
                     <?php foreach ($providerData['reviews'] as $review): ?>
@@ -129,16 +186,38 @@ if (isset($_GET['logout'])) {
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const actionButtons = document.querySelectorAll('.action-btn');
-            actionButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    const action = this.textContent.trim();
-                    console.log(`Action clicked: ${action}`);
-                    this.style.transform = 'scale(0.95)';
-                    setTimeout(() => {
-                        this.style.transform = '';
-                    }, 150);
-                });
+            const commentsBtn = document.getElementById('comments-btn');
+            const callBtn = document.getElementById('call-btn');
+            const phoneDisplay = document.getElementById('phone-display');
+            const commentForm = document.getElementById('comment-form');
+
+            // Toggle comment form and scroll to reviews section
+            commentsBtn.addEventListener('click', function() {
+                commentForm.style.display = commentForm.style.display === 'none' ? 'block' : 'none';
+                document.getElementById('reviews-section').scrollIntoView({ behavior: 'smooth' });
+                this.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                }, 150);
+            });
+
+            // Show/hide phone number
+            callBtn.addEventListener('click', function() {
+                phoneDisplay.style.display = phoneDisplay.style.display === 'none' ? 'block' : 'none';
+                this.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                }, 150);
+            });
+
+            // Handle favorite button click
+            const favoriteBtn = document.querySelector('.btn-favorite');
+            favoriteBtn.addEventListener('click', function() {
+                console.log('Favorite button clicked');
+                this.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                }, 150);
             });
         });
     </script>

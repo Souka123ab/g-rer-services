@@ -175,14 +175,14 @@ body {
   top: 50%;
   transform: translateY(-50%);
   color: #999;
-  font-size: 0.9rem;
+  font-size:12px;
 }
 
 .search-input {
   padding: 1rem 1rem 1rem 2.5rem;
   border: 2px solid #e9ecef;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 15px;
   box-shadow: 0 5px 5px rgba(0, 0, 0, 0.1);
   transition: border-color 0.3s ease;
 }
@@ -340,10 +340,12 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 6px;
 }
 
 .price-section {
   display: flex;
+  width: 34%;
   flex-direction: column;
   gap: 4px;
 }
@@ -355,7 +357,7 @@ body {
 }
 
 .price {
-  font-size: 20px;
+  font-size: 15px;
   font-weight: 600;
   color: #1e293b;
 }
@@ -364,9 +366,9 @@ body {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 8px;
+  padding: 3px 6px;
   border-radius: 8px;
-  color: #e11d48;
+  color: #f93c65;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
@@ -552,15 +554,17 @@ body {
 }
 
 .service-button {
-  width: 100%;
-  padding: 12px 24px;
+  width: 80%;
+  padding: 5px 9px;
   border: none;
   border-radius: 8px;
+  text-align: center;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
   color: white;
+  background: #ae6cf5;
   text-decoration: none;
   display: inline-block;
 }
@@ -630,7 +634,7 @@ body {
   }
 
   .hero-title {
-    font-size: 2rem;
+    font-size: 19px;
   }
 
   .search-inputs {
@@ -671,7 +675,7 @@ body {
   }
 
   .hero-title {
-    font-size: 1.75rem;
+    font-size: 15px;
   }
 
   .search-form {
@@ -701,4 +705,15 @@ body {
   .services-grid {
     grid-template-columns: repeat(4, 1fr);
   }
+}
+.favorite-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 25px;
+    /* margin-left: 10px; */
+}
+#pr{
+  background-color: #6c757d; /* Gray for "Voir profil" */
+  margin-top: 8px;
 }

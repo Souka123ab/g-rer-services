@@ -274,3 +274,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Optional: Handle other interactions (e.g., search, filter) if needed
 });
+document.querySelectorAll('.btn-favorite, .btn-demander').forEach(button => {
+    button.addEventListener('click', () => {
+        window.location.href = button.getAttribute('data-href');
+    });
+});
